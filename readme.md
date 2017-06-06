@@ -18,7 +18,7 @@ The havex.profile example is included for a quick test.
 ## Example
 
     python csToModrewrite.py -i havex.profile -c http://myteamserver.com -d http://google.com
-
+    
     RewriteEngine On
     RewriteCond %{REQUEST_URI} ^/(/include/template/isx.php|/wp06/wp-includes/po.php|/wp08/wp-includes/dtcla.php|/modules/mod_search.php|/blog/wp-includes/pomo/src.php|/includes/phpmailer/class.pop3.php)/?$
     RewriteCond %{HTTP_USER_AGENT} ^Mozilla/5\.0\ (Windows;\ U;\ MSIE\ 7\.0;\ Windows\ NT\ 5\.2)\ Java/1\.5\.0_08)?$
