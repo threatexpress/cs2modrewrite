@@ -25,7 +25,7 @@ The havex.profile example is included for a quick test.
 
     python cs2modrewrite.py -i havex.profile -c https://TEAMSERVER -d HTTPS://GOHERE
     #### Save the following as .htaccess in the root web directory
-
+    
     ########################################
     ## .htaccess START 
     RewriteEngine On
@@ -53,7 +53,7 @@ The havex.profile example is included for a quick test.
     RewriteRule ^.*$ "https://TEAMSERVER%{REQUEST_URI}" [P,L]
 
     ## Redirect all other traffic here (Optional)
-    RewriteRule ^.*$ HTTPS://GOHERE/? [L,R=302]
+    RewriteRule ^.*$ HTTPS://GOHERE/ [L,R=302]
 
     ## .htaccess END
     ########################################
@@ -81,6 +81,7 @@ __SSL support requires the following in the site config__
 
 ## References
 
+[cs2modrewrite.py blog post](https://posts.specterops.io/automating-apache-mod-rewrite-and-cobalt-strike-malleable-c2-profiles-d45266ca642)
 
 [Apache mod_rewrite](http://httpd.apache.org/docs/current/mod/mod_rewrite.html)
 
