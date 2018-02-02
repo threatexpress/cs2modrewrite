@@ -9,13 +9,13 @@ import sys
 
 
 description = '''
-Converts Cobalt Strike profiles to Apache mod_rewrite .htaccess file format by using the User-Agent and URI Endpoint to create rewrite rules.  Make sure the profile passes a c2lint check before running this sript.
+Converts Cobalt Strike profiles to Apache mod_rewrite .htaccess file format by using the User-Agent and URI Endpoint to create rewrite rules.  Make sure the profile passes a c2lint check before running this script.
 '''
 
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('-i', dest='inputfile', help='C2 Profile file')
 parser.add_argument('-c', dest='c2Server', help='C2 Server (http://teamserver)')
-parser.add_argument('-d', dest='destination', help='Redirect to this URL (http://google.com)')
+parser.add_argument('-d', dest='destination', help='(Optional) Redirect to this URL (http://google.com)')
 
 args = parser.parse_args()
 
@@ -124,38 +124,33 @@ uris_string = ".*|".join(uris) + ".*"
 
 htaccess_template = '''
 ########################################
-## .htaccess START
-
+## .htaccess START 
 RewriteEngine On
 
 ## (Optional)
 ## Scripted Web Delivery 
 ## Uncomment and adjust as needed
 #RewriteCond %{{REQUEST_URI}} ^/css/style1.css?$
-#RewriteCond %{{HTTP_USER_AGENT}} ^$ [P,L]
-
-## Staging Support
-## Uncomment and adjust as needed
+#RewriteCond %{{HTTP_USER_AGENT}} ^$
 #RewriteRule ^.*$ "http://TEAMSERVER%{{REQUEST_URI}}" [P,L]
-#RewriteCond %{{REQUEST_URI}} ^/..../?$
-#RewriteCond %{{HTTP_USER_AGENT}} "{ua}""
+
+## Default Beacon Staging Support (/1234)
+RewriteCond %{{REQUEST_URI}} ^/..../?$
+RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
+RewriteRule ^.*$ "http://TEAMSERVER%{{REQUEST_URI}}" [P,L]
 
 ## C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs)
+## Logic: If a requested URI AND the User-Agent matches, proxy the connection to the Teamserver
+## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
+## Refer to http://httpd.apache.org/docs/current/mod/mod_rewrite.html
 ## Profile URIs
 RewriteCond %{{REQUEST_URI}} ^({uris})$
 ## Profile UserAgent
 RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
-
-## Logic: If a URI matches AND the User-Agent, proxy the connection to the Teamserver
-## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
-## Refer to http://httpd.apache.org/docs/current/mod/mod_rewrite.html
-
 RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
 
-## (Optional)
-## Redirect All other traffic here (Optional)
-## Uncomment and adjust as needed
-#RewriteRule ^.*$ {destination}/? [L,R=302]
+## Redirect all other traffic here
+RewriteRule ^.*$ {destination}/? [L,R=302]
 
 ## .htaccess END
 ########################################

