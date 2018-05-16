@@ -79,6 +79,16 @@ __SSL support requires the following in the site config__
     SSLProxyCheckPeerCN off
     SSLProxyCheckPeerName off
 
+__HTACCESS__
+If you plan on using mod_rewrite in .htaccess files, you also need to enable the use of .htaccess files by changing `AllowOverride None` to `AllowOverride All`. For the default website, edit /etc/apache2/sites-available/default
+
+    <Directory /var/www/>
+            Options Indexes FollowSymLinks MultiViews
+            AllowOverride All
+            Order allow,deny
+            allow from all
+    </Directory>
+
 ## References
 
 [cs2modrewrite.py blog post](https://posts.specterops.io/automating-apache-mod-rewrite-and-cobalt-strike-malleable-c2-profiles-d45266ca642)

