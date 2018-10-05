@@ -63,10 +63,12 @@ The havex.profile example is included for a quick test.
 
 __Enable Rewrite and Proxy__
 
-    a2enmod rewrite
-    a2enmod proxy
-    a2enmod proxy_http
+    a2enmod rewrite headers proxy proxy_http ssl cache
+    a2dismod -f deflate
     service apache2 reload
+
+Note: https://bluescreenofjeff.com/2016-06-28-cobalt-strike-http-c2-redirectors-with-apache-mod_rewrite/
+"e0x70i pointed out in the comments below that if your Cobalt Strike Malleable C2 profile contains an Accept-Encoding header for gzip, your Apache install may compress that traffic by default and cause your Beacon to be unresponsive or function incorrectly. To overcome this, disable mod_deflate (via a2dismod deflate and add the No Encode ([NE]) flag to your rewrite rules. (Thank you, e0x70i!)"
 
 __SSL support requires the following in the site config__
 
