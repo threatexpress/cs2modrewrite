@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-## Title:       csToModrewrite.py
+## Title:       cs2modrewrite.py
 ## Author:      Joe Vest, Andrew Chiles
 ## Description: Converts Cobalt Strike profiles to Apache mod_rewrite .htaccess file format
 
 import argparse
 import sys
+import re
 
 
 description = '''
@@ -13,26 +14,30 @@ Converts Cobalt Strike profiles to Apache mod_rewrite .htaccess file format by u
 '''
 
 parser = argparse.ArgumentParser(description=description)
-parser.add_argument('-i', dest='inputfile', help='C2 Profile file')
-parser.add_argument('-c', dest='c2Server', help='C2 Server (http://teamserver)')
-parser.add_argument('-d', dest='destination', help='(Optional) Redirect to this URL (http://google.com)')
+parser.add_argument('-i', dest='inputfile', help='C2 Profile file', required=True)
+parser.add_argument('-c', dest='c2server', help='C2 Server (http://teamserver)', required=True)
+parser.add_argument('-r', dest='redirect', help='Redirect to this URL (http://google.com)', required=True)
 
 args = parser.parse_args()
 
-# Check Arguments
-if not args.inputfile:  
-    print("[!] Missing inputfile")
+# Make sure we were provided with vaild URLs 
+# https://stackoverflow.com/questions/7160737/python-how-to-validate-a-url-in-python-malformed-or-not
+regex = re.compile(
+        r'^(?:http|ftp)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+if re.match(regex, args.c2server) is None:
     parser.print_help()
+    print("[!] c2server is malformed. Are you sure {} is a valid URL?".format(args.c2server))
     sys.exit(1)
 
-if not args.c2Server:   
-    print("[!] Missing c2Server")
+if re.match(regex, args.redirect) is None:
     parser.print_help()
-    sys.exit(1)
-
-if not args.destination:    
-    print("[!] Missing destination")
-    parser.print_help()
+    print("[!] redirect is malformed. Are you sure {} is a valid URL?".format(args.redirect))
     sys.exit(1)
 
 profile = open(args.inputfile,"r")
@@ -150,13 +155,13 @@ RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
 RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
 
 ## Redirect all other traffic here
-RewriteRule ^.*$ {destination}/? [L,R=302]
+RewriteRule ^.*$ {redirect}/? [L,R=302]
 
 ## .htaccess END
 ########################################
 '''
 print("#### Save the following as .htaccess in the root web directory")
-print(htaccess_template.format(uris=uris_string,ua=ua_string,c2server=args.c2Server,destination=args.destination))
+print(htaccess_template.format(uris=uris_string,ua=ua_string,c2server=args.c2server,redirect=args.redirect))
 
 
 # Print Errors Found
