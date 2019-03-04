@@ -117,7 +117,9 @@ get_uris  = get_uri.split()
 post_uris = post_uri.split()
 stager86_uris = stager_uri_86.split()
 stager64_uris = stager_uri_64.split()
-uris = get_uris + post_uris + stager86_uris + stager64_uris
+# Remove duplicate URIs
+temp_uris = get_uris + post_uris + stager86_uris + stager64_uris
+uris = list(set(temp_uris))
 
 # Create UA in modrewrite syntax. No regex needed in UA string matching, but () characters must be escaped
 ua_string = ua.replace('(','\(').replace(')','\)')

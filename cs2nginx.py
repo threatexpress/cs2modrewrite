@@ -16,7 +16,7 @@ Make sure the profile passes a c2lint check before running this script.
 The resulting Nginx config will:
 - Attempt to serve files locally if they exist
 - Proxy any matching URIs to the C2 server
-- Redirect any non-matching requests to a specified server
+- Redirect any non-matching requests to a specified redirection domain along with the original URI
 '''
 
 parser = argparse.ArgumentParser(description=description)
@@ -56,7 +56,7 @@ contents = profile.read()
 ua_string  = "set useragent"
 http_get   = "http-get"
 http_post  = "http-post"
-set_uri    = "set uri"
+set_uri    = "set uri "
 
 http_stager = "http-stager"
 set_uri_86 = "set uri_x86"
@@ -126,8 +126,9 @@ get_uris  = get_uri.split()
 post_uris = post_uri.split()
 stager86_uris = stager_uri_86.split()
 stager64_uris = stager_uri_64.split()
-uris = get_uris + post_uris + stager86_uris + stager64_uris
-
+# Remove duplicate URIs
+temp_uris = get_uris + post_uris + stager86_uris + stager64_uris
+uris = list(set(temp_uris))
 # Create UA in modrewrite syntax. No regex needed in UA string matching, but () characters must be escaped
 ua_string = ua.replace('(','\(').replace(')','\)')
 
@@ -180,9 +181,9 @@ http {{
     ############################
     # Logging Settings
     #############################
-    log_format   main '$remote_addr - $remote_user [$time_local]  $status '
-    '"$request" $body_bytes_sent "$http_referer" '
-    '"$http_user_agent" "$http_x_forwarded_for"';
+    log_format main '[$time_iso8601] $remote_addr - $remote_user  proxy:$upstream_addr $status '
+                    '"$request" $body_bytes_sent "$http_referer"'
+                    '"$http_user_agent" "$http_x_forwarded_for"';
 
     access_log /var/log/nginx/access.log main;
     error_log /var/log/nginx/error.log;
@@ -237,14 +238,16 @@ http {{
         ##########################
         # Set all custom error pages to redirect back to the $host from the requested URI
         # This should return to the useragent to the server root and avoid presentation of default Nginx error pages
-        error_page 400 401 402 403 404 405 406 407 408 409 410 411 412 413 414 415 416 417 418 420 422 423 424 426 428 429 431 444 449 450 451 500 501 502 503 504 505 506 507 508 509 510 511 $scheme://$host;
+        error_page 400 401 402 403 404 405 406 407 408 409 410 411 412 413 414 415 416 417 418 420 422 423 424 426 428 429 431 444 449 450 451 500 501 502 503 504 505 506 507 508 509 510 511 @redirect;
 
         ##########################
         # Generic file request handling
         ##########################
-        # Try to serve static file and send to @redirect location if not present
+        # Try to serve static file from server root
+        # Try to serve index.html if present
+        # Send to @redirect location
         location / {{
-            try_files $uri @redirect;
+            try_files $uri $uri/ /index.html @redirect;
         }}
 
         ##########################
@@ -264,15 +267,6 @@ http {{
             proxy_set_header    Host                $host;
             proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
             proxy_set_header    X-Real-IP           $remote_addr;
-        }}
-
-        # Process PHP file requests
-        location ~ \.php$ {{
-                try_files       $uri @c2;
-                fastcgi_pass    unix:/var/run/php5-fpm.sock;
-                fastcgi_index   index.php;
-                fastcgi_param   SCRIPT_FILENAME     $document_root$fastcgi_script_name;
-                include         fastcgi_params;
         }}
 
         # Redirect requests to the $REDIRECT_DOMAIN + Original request URI
