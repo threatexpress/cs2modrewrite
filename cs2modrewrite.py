@@ -43,11 +43,15 @@ if re.match(regex, args.redirect) is None:
 profile = open(args.inputfile,"r")
 contents = profile.read()
 
+
+# Strip all single line comments (#COMMENT\n) from profile before searching so it doens't break our crappy parsing
+contents = re.sub(re.compile("#.*?\n" ) ,"" ,contents)
+
 # Search Strings
 ua_string  = "set useragent"
 http_get   = "http-get"
 http_post  = "http-post"
-set_uri    = "set uri"
+set_uri    = "set uri "
 
 http_stager = "http-stager"
 set_uri_86 = "set uri_x86"

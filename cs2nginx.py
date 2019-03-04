@@ -52,6 +52,9 @@ if re.match(regex, args.redirect) is None:
 profile = open(args.inputfile,"r")
 contents = profile.read()
 
+# Strip all single line comments (#COMMENT\n) from profile before searching so it doens't break our crappy parsing
+contents = re.sub(re.compile("#.*?\n" ) ,"" ,contents)
+
 # Search Strings
 ua_string  = "set useragent"
 http_get   = "http-get"
