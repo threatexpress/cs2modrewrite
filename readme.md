@@ -81,6 +81,10 @@ The havex.profile example is included for a quick test.
 
 
 ----------------------------------------------
+## Nginx Setup
+
+apt-get install nginx
+
 ## Apache Rewrite Setup and Tips
 
 ### Enable Rewrite and Proxy
