@@ -83,7 +83,8 @@ The havex.profile example is included for a quick test.
 ----------------------------------------------
 ## Nginx Setup
 
-apt-get install nginx nginx-extras
+`apt-get install nginx nginx-extras`
+
 *Note:* `nginx-extras` is needed for custom server headers. If you can't get this package, then comment out the server header line in the resulting configuration file.
  
 ## Apache Rewrite Setup and Tips
