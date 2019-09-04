@@ -95,19 +95,22 @@ The havex.profile example is included for a quick test.
     a2dismod -f deflate
     service apache2 reload
 
-Note: https://bluescreenofjeff.com/2016-06-28-cobalt-strike-http-c2-redirectors-with-apache-mod_rewrite/
+*Note:* https://bluescreenofjeff.com/2016-06-28-cobalt-strike-http-c2-redirectors-with-apache-mod_rewrite/
 "e0x70i pointed out in the comments below that if your Cobalt Strike Malleable C2 profile contains an Accept-Encoding header for gzip, your Apache install may compress that traffic by default and cause your Beacon to be unresponsive or function incorrectly. To overcome this, disable mod_deflate (via a2dismod deflate and add the No Encode ([NE]) flag to your rewrite rules. (Thank you, e0x70i!)"
 
-### SL support requires the following in the site config
+### SSL support requires the following in the site config
 
     # Enable SSL
     SSLEngine On
+    
     # Enable Proxy
     SSLProxyEngine On
-    # Trust Self-Signed Certificates generate by CobaltStrike
+    
+    # Trust Self-Signed Certificates
     SSLProxyVerify none
     SSLProxyCheckPeerCN off
     SSLProxyCheckPeerName off
+    SSLProxyCheckPeerExpire off
 
 ### HTACCESS
 If you plan on using mod_rewrite in .htaccess files, you also need to enable the use of .htaccess files by changing `AllowOverride None` to `AllowOverride All`. For the default website, edit /etc/apache2/sites-available/default
