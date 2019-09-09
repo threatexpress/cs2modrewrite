@@ -30,7 +30,9 @@ The havex.profile example is included for a quick test.
     ########################################
     ## .htaccess START 
     RewriteEngine On
-
+    ## Uncomment to enable verbose debugging in /var/logs/apache2/error.log
+    # LogLevel alert rewrite:trace5
+    
     ## (Optional)
     ## Scripted Web Delivery 
     ## Uncomment and adjust as needed
