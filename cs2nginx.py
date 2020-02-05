@@ -9,7 +9,8 @@ import sys
 import re
 
 description = '''
-Converts Cobalt Strike profiles by using URI endpoints to create regex matching rules.
+Requires Python 3.0+
+Converts Cobalt Strike malleable C2 profiles (<=4.0) by using URI endpoints to create regex matching rules.
 This version does not currently contain User-Agent matching.
 Make sure the profile passes a c2lint check before running this script.
 
@@ -30,23 +31,22 @@ args = parser.parse_args()
 # Make sure we were provided with vaild URLs 
 # https://stackoverflow.com/questions/7160737/python-how-to-validate-a-url-in-python-malformed-or-not
 regex = re.compile(
-        r'^(?:http|ftp)s?://' # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-        r'localhost|' #localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-        r'(?::\d+)?' # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    r'^(?:http|ftp)s?://' # http:// or https://
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+    r'localhost|' #localhost...
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+    r'(?::\d+)?' # optional port
+    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
 if re.match(regex, args.c2server) is None:
     parser.print_help()
-    print("\n[!] c2server is malformed. Are you sure {} is a valid URL?".format(args.c2server))
+    print("[!] c2server is malformed. Are you sure {} is a valid URL?".format(args.c2server),file=sys.stderr)
     sys.exit(1)
 
 if re.match(regex, args.redirect) is None:
     parser.print_help()
-    print("\n[!] redirect is malformed. Are you sure {} is a valid URL?".format(args.redirect))
+    print("[!] redirect is malformed. Are you sure {} is a valid URL?".format(args.redirect),file=sys.stderr)
     sys.exit(1)
-
 
 # Read C2 profile
 profile = open(args.inputfile,"r")
@@ -57,13 +57,7 @@ contents = re.sub(re.compile("#.*?\n" ) ,"" ,contents)
 
 # Search Strings
 ua_string  = "set useragent"
-http_get   = "http-get"
-http_post  = "http-post"
-set_uri    = "set uri "
-
-http_stager = "http-stager"
-set_uri_86 = "set uri_x86"
-set_uri_64 = "set uri_x64"
+set_uri    = r"set uri.*\"(.*?)\"\;"
 
 # Errors
 errorfound = False
@@ -79,63 +73,26 @@ else:
     ua_end   = contents.find("\n",ua_start)
     ua       = contents[ua_start:ua_end].strip()[1:-2]
 
-
-# Get HTTP GET URIs
-http_get_start = contents.find(http_get)
-if contents.find(set_uri) == -1: 
-    get_uri = ""
-    errors += "[!] GET URIs Not Found\n"
+# Get all profile URIs based on our regex
+if len(re.findall(set_uri,contents)) == 0:
+    uris = ""
+    errors += "[!] No URIs found\n"
     errorfound = True
 else:
-    get_uri_start  = contents.find(set_uri, http_get_start) + len(set_uri)
-    get_uri_end    = contents.find("\n", get_uri_start)
-    get_uri        = contents[get_uri_start:get_uri_end].strip()[1:-2]
+    uris = re.findall(set_uri,contents)
+    # Split any uri specifications to handle cases where multiple URIs are separated by whitespace
+    # i.e. set uri "/path/1 /path/2"
+    split_uris = []
+    for uri in uris:
+        for i in uri.split():  
+            split_uris.append(i)
+    # Remove any duplicate URIs
+    uris = list(set(split_uris))
 
-# Get HTTP POST URIs
-http_post_start = contents.find(http_post)
-if contents.find(set_uri) == -1:
-    post_uri = ""
-    errors += "[!] POST URIs Not Found\n"
-    errorfound = True
-else:
-    post_uri_start  = contents.find(set_uri, http_post_start) + len(set_uri)
-    post_uri_end    = contents.find("\n", post_uri_start)
-    post_uri        = contents[post_uri_start:post_uri_end].strip()[1:-2]
-
-# Get HTTP Stager URIs x86
-http_stager_start = contents.find(http_stager)
-if contents.find(set_uri_86) == -1:
-    stager_uri_86 = ""
-    errors += "[!] x86 Stager URIs Not Found\n"
-    errorfound = True
-else:
-    stager_uri_start  = contents.find(set_uri_86, http_stager_start) + len(set_uri_86)
-    stager_uri_end    = contents.find("\n", stager_uri_start)
-    stager_uri_86     = contents[stager_uri_start:stager_uri_end].strip()[1:-2]
-
-# Get HTTP Stager URIs x64
-http_stager_start = contents.find(http_stager)
-if contents.find(set_uri_64) == -1:
-    stager_uri_64 = ""
-    errors += "[!] x64 Stager URIs Not Found\n"
-    errorfound = True
-else:
-    stager_uri_start  = contents.find(set_uri_64, http_stager_start) + len(set_uri_64)
-    stager_uri_end    = contents.find("\n", stager_uri_start)
-    stager_uri_64     = contents[stager_uri_start:stager_uri_end].strip()[1:-2]
-
-# Create URIs list
-get_uris  = get_uri.split()
-post_uris = post_uri.split()
-stager86_uris = stager_uri_86.split()
-stager64_uris = stager_uri_64.split()
-# Remove duplicate URIs
-temp_uris = get_uris + post_uris + stager86_uris + stager64_uris
-uris = list(set(temp_uris))
 # Create UA in modrewrite syntax. No regex needed in UA string matching, but () characters must be escaped
 ua_string = ua.replace('(','\(').replace(')','\)')
 
-# Create URI string in modrewrite syntax. "*" are needed in REGEX to support GET parameters on the URI
+# Create URI string in modrewrite syntax. "*" are needed in regex to support GET and uri-append parameters on the URI
 uris_string = ".*|".join(uris) + ".*"
 
 nginx_template = '''
@@ -300,7 +257,13 @@ http {{
 ########################################
 '''
 print("#### Save the following as /etc/nginx/nginx.conf")
+print("## Profile User-Agent Found:")
+print("# {}".format(ua))
+print("## Profile URIS Found ({}):".format(str(len(uris))))
+for uri in uris: 
+    print("# {}".format(uri))
 print(nginx_template.format(uris=uris_string,ua=ua_string,c2server=args.c2server,redirect=args.redirect,hostname=args.hostname))
 
 # Print Errors Found
-if errorfound: print(errors)
+if errorfound: 
+    print(errors, file=sys.stderr)
