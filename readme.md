@@ -1,5 +1,5 @@
 # Automatically Generate Rulesets for Apache mod_rewrite or Nginx for Intelligent HTTP C2 Redirection
-
+![Python application](https://github.com/threatexpress/cs2modrewrite/workflows/Python%20application/badge.svg)
 This project converts a Cobalt Strike profile to a functional mod_rewrite `.htaccess` or Nginx config file to support HTTP reverse proxy redirection to a Cobalt Strike teamserver. The use of reverse proxies provides protection to backend C2 servers from profiling, investigation, and general internet background radiation.
 
 ***Note***: You should test and tune the output as needed before deploying, but these scripts should handle the heavy lifting.
