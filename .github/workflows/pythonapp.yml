@@ -33,8 +33,4 @@ jobs:
     - name: Test file output
       run: |
           python cs2modrewrite.py -i havex.profile -c http://127.0.0.1 -r http://google.com -o htaccess.txt
-    - uses: actions/upload-artifact@v1
-      if: success()
-      with:
-        name: .htaccess.txt
-        path: .htaccess.txt
+      
