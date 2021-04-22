@@ -88,6 +88,18 @@ ua_string = ua.replace('(','\(').replace(')','\)')
 # Create URI string in modrewrite syntax. "*" are needed in regex to support GET and uri-append parameters on the URI
 uris_string = ".*|".join(uris) + ".*"
 
+# Check if staging is disabled, and adjust staging section for template
+if bool(re.search('host_stage "false"', contents)):
+    staging = ""
+else:
+    staging = '''
+## Default Beacon Staging Support (/1234)
+RewriteCond %{{REQUEST_METHOD}} GET [NC]
+RewriteCond %{{REQUEST_URI}} ^/..../?$
+RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
+RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
+'''
+
 htaccess_template = '''
 ########################################
 ## .htaccess START
@@ -99,13 +111,7 @@ RewriteEngine On
 #RewriteCond %{{REQUEST_URI}} ^/css/style1.css?$
 #RewriteCond %{{HTTP_USER_AGENT}} ^$
 #RewriteRule ^.*$ "http://TEAMSERVER%{{REQUEST_URI}}" [P,L]
-
-## Default Beacon Staging Support (/1234)
-RewriteCond %{{REQUEST_METHOD}} GET [NC]
-RewriteCond %{{REQUEST_URI}} ^/..../?$
-RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
-RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
-
+{staging}
 ## C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs)
 ## Logic: If a requested URI AND the User-Agent matches, proxy the connection to the Teamserver
 ## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
@@ -131,7 +137,7 @@ print("## Profile URIS Found ({}):".format(str(len(uris))))
 for uri in uris:
     print("# {}".format(uri))
 
-htaccess = htaccess_template.format(uris=uris_string, ua=ua_string, c2server=args.c2server, redirect=args.redirect)
+htaccess = htaccess_template.format(uris=uris_string, ua=ua_string, c2server=args.c2server, redirect=args.redirect, staging=staging)
 if args.out_file:
     with open(args.out_file, 'w') as outfile:
         outfile.write(htaccess)
