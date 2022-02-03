@@ -16,8 +16,8 @@ Note: Additional User-Agent specifications within http-get or http-post client b
 
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('-i', dest='inputfile', help='C2 Profile file', required=True)
-parser.add_argument('-c', dest='c2server', help='C2 Server (http://teamserver)', required=True)
-parser.add_argument('-r', dest='redirect', help='Redirect to this URL (http://google.com)', required=True)
+parser.add_argument('-c', dest='c2server', help='C2 Server without protocol (teamserver.com)', required=True)
+parser.add_argument('-r', dest='redirect', help='Redirect to this URL (https://google.com)', required=True)
 parser.add_argument('-o', dest='out_file', help='Write .htaccess contents to target file', required=False)
 
 args = parser.parse_args()
@@ -32,7 +32,14 @@ regex = re.compile(
     r'(?::\d+)?' # optional port
     r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
-if re.match(regex, args.c2server) is None:
+regex_without_protocol = re.compile(
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+    r'localhost|' #localhost...
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+    r'(?::\d+)?' # optional port
+    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+if re.match(regex_without_protocol, args.c2server) is None:
     parser.print_help()
     print("[!] c2server is malformed. Are you sure {} is a valid URL?".format(args.c2server),file=sys.stderr)
     sys.exit(1)
@@ -97,7 +104,9 @@ else:
 RewriteCond %{{REQUEST_METHOD}} GET [NC]
 RewriteCond %{{REQUEST_URI}} ^/..../?$
 RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
-RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
+RewriteCond %{{HTTPS}} off [OR]
+RewriteCond %{{HTTPS}}:s on:(s) 
+RewriteRule ^.*$ "http%1://{c2server}%{{REQUEST_URI}}" [P,L]
 '''
 
 htaccess_template = '''
@@ -110,8 +119,10 @@ RewriteEngine On
 ## Uncomment and adjust as needed
 #RewriteCond %{{REQUEST_URI}} ^/css/style1.css?$
 #RewriteCond %{{HTTP_USER_AGENT}} ^$
-#RewriteRule ^.*$ "http://TEAMSERVER%{{REQUEST_URI}}" [P,L]
-{staging}
+#RewriteCond %{{HTTPS}} off [OR]
+#RewriteCond %{{HTTPS}}:s on:(s) 
+#RewriteRule ^.*$ "http%1://{c2server}%{{REQUEST_URI}}" [P,L]
+''' + staging + '''
 ## C2 Traffic (HTTP-GET, HTTP-POST, HTTP-STAGER URIs)
 ## Logic: If a requested URI AND the User-Agent matches, proxy the connection to the Teamserver
 ## Consider adding other HTTP checks to fine tune the check.  (HTTP Cookie, HTTP Referer, HTTP Query String, etc)
@@ -122,7 +133,9 @@ RewriteCond %{{REQUEST_METHOD}} ^(GET|POST) [NC]
 RewriteCond %{{REQUEST_URI}} ^({uris})$
 ## Profile UserAgent
 RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
-RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
+RewriteCond %{{HTTPS}} off [OR]
+RewriteCond %{{HTTPS}}:s on:(s) 
+RewriteRule ^.*$ "http%1://{c2server}%{{REQUEST_URI}}" [P,L]
 
 ## Redirect all other traffic here
 RewriteRule ^.*$ {redirect}/? [L,R=302]
