@@ -89,7 +89,6 @@ else:
 uas = [ (ua).replace('(','\(').replace(')','\)') for ua in uas ]
 # Add | separator between multiple User-Agents for modrewrite
 uas_string = "|".join(uas)
-print(uas_string)
 
 # Create URI string in modrewrite syntax. "*" are needed in regex to support GET and uri-append parameters on the URI
 uris_string = ".*|".join(uris) + ".*"
