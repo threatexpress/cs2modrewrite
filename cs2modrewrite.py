@@ -128,7 +128,7 @@ RewriteCond %{{REQUEST_METHOD}} ^(GET|POST) [NC]
 ## Profile URIs
 RewriteCond %{{REQUEST_URI}} ^({uris})$
 ## Profile UserAgents
-RewriteCond %{{HTTP_USER_AGENT}} ^({uas})$
+RewriteCond %{{HTTP_USER_AGENT}} "^({uas})$"
 RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
 
 ## Redirect all other traffic here
