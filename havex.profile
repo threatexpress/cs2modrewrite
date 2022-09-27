@@ -92,6 +92,8 @@ http-get {
 		header "Referer" "http://www.google.com";
 		header "Accept" "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5";
 		header "Accept-Language" "en-us,en;q=0.5";
+        # Added additional headers to test parsing for additional UAs passed with `header`
+        header "User-Agent" "Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 5.2) Java/1.5.0_10";
 
 		# base64 encoded Cookie is not a havex indicator, but a place to stuff our data
 		metadata {
@@ -122,7 +124,7 @@ http-post {
 
 	client {
 		header "Content-Type" "application/octet-stream";
-
+        header "User-Agent" "Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 5.2) Java/1.5.0_11";
 		# transmit our sess id as /whatever.php?id=[identifier]
 		id {
 			parameter "id";

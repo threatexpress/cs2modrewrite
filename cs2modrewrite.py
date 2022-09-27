@@ -9,15 +9,14 @@ import re
 
 description = '''
 Python 3.0+
-Converts Cobalt Strike (<=4.0) profiles to Apache mod_rewrite .htaccess file format by using the User-Agent and URI Endpoint to create rewrite rules.
+Converts Cobalt Strike (>=4.0) profiles to Apache mod_rewrite .htaccess file format by using the User-Agent and URI Endpoint to create rewrite rules.
 Make sure the profile passes a c2lint check before running this script.
-Note: Additional User-Agent specifications within http-get or http-post client blocks are not accounted for by this script
 '''
 
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('-i', dest='inputfile', help='C2 Profile file', required=True)
-parser.add_argument('-c', dest='c2server', help='C2 Server (http://teamserver)', required=True)
-parser.add_argument('-r', dest='redirect', help='Redirect to this URL (http://google.com)', required=True)
+parser.add_argument('-c', dest='c2server', help='C2 Server (e.g., http://C2SERVER)', required=True)
+parser.add_argument('-r', dest='redirect', help='Redirect to this URL (e.g., http://google.com)', required=True)
 parser.add_argument('-o', dest='out_file', help='Write .htaccess contents to target file', required=False)
 
 args = parser.parse_args()
@@ -49,22 +48,26 @@ contents = profile.read()
 contents = re.sub(re.compile("#.*?\n" ) ,"\n" ,contents)
 
 # Search Strings
-ua_string  = "set useragent"
+set_ua_search_string = r"set useragent *\"(.*?)\"\;"
 set_uri    = r"set uri.*\"(.*?)\"\;"
+# Additional UA strings could be added with the `header` option
+header_ua_search_string = r"header \"User-Agent\".*\"(.*?)\"\;"
 
 # Errors
 errorfound = False
 errors = "\n##########\n[!] ERRORS\n"
 
-# Get UserAgent
-if contents.find(ua_string) == -1:
-    ua = ""
-    errors += "[!] User-Agent Not Found\n"
+# Get Default UserAgent
+if len(re.findall(set_ua_search_string, contents)) == 0:
+    uas = []
+    errors += "[!] Default User-Agent Not Found\n"
     errorfound = True
 else:
-    ua_start = contents.find(ua_string) + len(ua_string)
-    ua_end   = contents.find("\n",ua_start)
-    ua       = contents[ua_start:ua_end].strip()[1:-2]
+   uas = re.findall(set_ua_search_string, contents)
+
+# Get all UserAgents set via the `header` option and add them to our list of UserAgents
+for ua in (re.findall(header_ua_search_string, contents)):
+    uas.append(ua)
 
 # Get all profile URIs based on our regex
 if len(re.findall(set_uri,contents)) == 0:
@@ -83,7 +86,9 @@ else:
     uris = list(set(split_uris))
 
 # Create UA in modrewrite syntax. No regex needed in UA string matching, but () characters must be escaped
-ua_string = ua.replace('(','\(').replace(')','\)')
+uas = [ (ua).replace('(','\(').replace(')','\)') for ua in uas ]
+# Add | separator between multiple User-Agents for modrewrite
+uas_string = "|".join(uas)
 
 # Create URI string in modrewrite syntax. "*" are needed in regex to support GET and uri-append parameters on the URI
 uris_string = ".*|".join(uris) + ".*"
@@ -96,9 +101,11 @@ else:
 ## Default Beacon Staging Support (/1234)
 RewriteCond %{{REQUEST_METHOD}} GET [NC]
 RewriteCond %{{REQUEST_URI}} ^/..../?$
-RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
+RewriteCond %{{HTTP_USER_AGENT}} ^({uas})$
 RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
 '''
+    # Replace variables in staging block
+    staging = staging.format(uas=uas_string, c2server=args.c2server)
 
 htaccess_template = '''
 ########################################
@@ -120,8 +127,8 @@ RewriteEngine On
 RewriteCond %{{REQUEST_METHOD}} ^(GET|POST) [NC]
 ## Profile URIs
 RewriteCond %{{REQUEST_URI}} ^({uris})$
-## Profile UserAgent
-RewriteCond %{{HTTP_USER_AGENT}} "{ua}"
+## Profile UserAgents
+RewriteCond %{{HTTP_USER_AGENT}} "^({uas})$"
 RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
 
 ## Redirect all other traffic here
@@ -131,19 +138,19 @@ RewriteRule ^.*$ {redirect}/? [L,R=302]
 ########################################
 '''
 print("#### Save the following as .htaccess in the root web directory")
-print("## Profile User-Agent Found:")
-print("# {}".format(ua))
+print("## Profile User-Agent Found ({}):".format(str(len(uas))))
+for ua in uas:
+    print("# {}".format(ua))
 print("## Profile URIS Found ({}):".format(str(len(uris))))
 for uri in uris:
     print("# {}".format(uri))
 
-htaccess = htaccess_template.format(uris=uris_string, ua=ua_string, c2server=args.c2server, redirect=args.redirect, staging=staging)
+htaccess = htaccess_template.format(uris=uris_string, uas=uas_string, c2server=args.c2server, redirect=args.redirect, staging=staging)
 if args.out_file:
     with open(args.out_file, 'w') as outfile:
         outfile.write(htaccess)
 else:
     print(htaccess)
-
 
 # Print Errors Found
 if errorfound:

@@ -1,4 +1,5 @@
 # Automatically Generate Rulesets for Apache mod_rewrite or Nginx for Intelligent HTTP C2 Redirection
+
 ![Python application](https://github.com/threatexpress/cs2modrewrite/workflows/Python%20application/badge.svg)
 This project converts a Cobalt Strike profile to a functional mod_rewrite `.htaccess` or Nginx config file to support HTTP reverse proxy redirection to a Cobalt Strike teamserver. The use of reverse proxies provides protection to backend C2 servers from profiling, investigation, and general internet background radiation.
 
@@ -6,13 +7,13 @@ This project converts a Cobalt Strike profile to a functional mod_rewrite `.htac
 
 ## Features
 
-- Now requires Python 3.0+ (this is 2020 after all)
+- Now requires Python 3.0+
 - Supports the Cobalt Strike custom URI features as of CS 4.0
 - Rewrite Rules based on valid C2 URIs (HTTP GET, POST, and Stager) and specified User-Agent string.
-  - Result: Only requests to valid C2 endpoints with a specified UA string will be proxied to the Team Server by default.
+  - Result: Only requests to valid C2 endpoints with a specified UA string will be proxied to the teamserver by default.
 - Uses a custom Malleable C2 profile to build a .htaccess file with corresponding mod_rewrite rules
 - Uses a custom Malleable C2 profile to build a Nginx config with corresponding proxy_pass rules
-- HTTP or HTTPS proxying to the Cobalt Strike Team Server
+- HTTP or HTTPS proxying to the Cobalt Strike teamserver
 - HTTP 302 Redirection to a Legitimate Site for Non-Matching Requests
 
 ## Quick start
@@ -79,6 +80,7 @@ python3 cs2modrewrite.py -i havex.profile -c https://TEAMSERVER -r https://GOHER
 ## Apache Rewrite Setup and Tips
 
 ### Enable Rewrite and Proxy
+
     apt-get install apache2
     a2enmod rewrite headers proxy proxy_http ssl cache
     a2dismod -f deflate
