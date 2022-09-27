@@ -59,7 +59,7 @@ errors = "\n##########\n[!] ERRORS\n"
 
 # Get Default UserAgent
 if len(re.findall(set_ua_search_string, contents)) == 0:
-    uas = ""
+    uas = []
     errors += "[!] Default User-Agent Not Found\n"
     errorfound = True
 else:
