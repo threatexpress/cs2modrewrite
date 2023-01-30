@@ -125,7 +125,7 @@ else:
 ## Default Beacon Staging Support (/1234)
 RewriteCond %{{REQUEST_METHOD}} GET [NC]
 RewriteCond %{{REQUEST_URI}} ^/..../?$
-RewriteCond %{{HTTP_USER_AGENT}} ^({uas})$
+RewriteCond %{{HTTP_USER_AGENT}} "^({uas})$"
 RewriteRule ^.*$ "{c2server}%{{REQUEST_URI}}" [P,L]
 """
     # Replace variables in staging block
